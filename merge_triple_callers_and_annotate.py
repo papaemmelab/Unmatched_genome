@@ -49,7 +49,7 @@ def merge(sample):
     
     
     svaba = f"/work/isabl/home/gutierj2/uk_all/svABA_unmatch/universal_normal/joe/{sample}.svaba.somatic.sv.vcf.gz"
-    gridss = f"/work/isabl/home/gutierj2/uk_all/GRIDDS_unmatched/universal_normal/joe/GRIDSS/{sample}_unmatched.sv.vcf"
+    gridss = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/gridss_somatic/{sample}_gridss_somatic.vcf"
     brass = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/brass_filtered_vcf/{sample}.brass.vcf.sorted.vcf.gz"
     mergedfile.merge(
         filenames = [brass, svaba, gridss],
@@ -58,7 +58,7 @@ def merge(sample):
         verbose=False,
         min_num_callers=2,
         forceSV=True,
-        outfile = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/merged/{sample}.merged.vcf"
+        outfile = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/merged/universal_normal/{sample}.merged.vcf"
     )
     
     os.makedirs(f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/annotated/universal_normal/{sample}", exist_ok=True)
@@ -69,7 +69,7 @@ def merge(sample):
         "--bind", "/juno:/juno",
         "/work/isabl/home/zhouy1/images/singularity/toil_unmatched_cnvkit_0.4.1.simg",
         "AnnotSV.tcl",
-        "-SVinputFile", f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/merged/{sample}.merged.vcf",
+        "-SVinputFile", f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/merged/universal_normal/{sample}.merged.vcf",
         "-bedtools", "/usr/local/bin/bedtools",
         "-outputFile", f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/sv_triplecaller_merge/annotated/universal_normal/{sample}/{sample}.merged.annotated.tsv",
         "-annotationFolder", "/work/isabl/home/zhouy1/annotsv/2.1_patch/AnnotSV/Annotations"
