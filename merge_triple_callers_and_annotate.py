@@ -7,16 +7,21 @@ import sys
 sys.path.append("/work/isabl/home/zhouy1/mergeSVvcf")
 from mergesvvcf import mergedfile
 
+def cat1_filtering_noSUPP(row):
+    row=list(row)
+    count=str(row[105:120]).count("yes")
+    return count
 
 def merge(sample):
     print(sample)
     vcf = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_0227/{sample}/merged_svs.all.vcf.gz"
     df = pd.read_csv(f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_0227/{sample}/{sample}_vs_I-H-108298-N1-1-D1-1.annotated.flagged.output.tsv", sep='\t')
     df = df[df['AnnotSV type']=='full']
-    #     df = df[df['brass_score']>=10]
-    df = df[(df['cat1_filters']==0)]
+    df['Cat1_noSUPP']=df.apply(lambda row: cat1_filtering_noSUPP(row), axis=1)
+    df=df[df['Cat1_noSUPP']==0]
     df['end1'] = df['end1'].astype(str)
     df['end2'] = df['end2'].astype(str)
+
     # *** any additional filters goes here ***
     with gzip.open(vcf, 'rb') as f:
         content = f.readlines()
