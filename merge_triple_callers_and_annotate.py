@@ -10,8 +10,8 @@ from mergesvvcf import mergedfile
 
 def merge(sample):
     print(sample)
-    vcf = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_1213/{sample}/merged_svs.all.vcf.gz"
-    df = pd.read_csv(f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_1213/{sample}/{sample}_vs_I-H-108298-N1-1-D1-1.annotated.flagged.output.tsv", sep='\t')
+    vcf = f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_0227/{sample}/merged_svs.all.vcf.gz"
+    df = pd.read_csv(f"/work/isabl/home/zhouy1/unmatechedSVpipeline/test/unmatched_benchmark/uk_all_sv_0227/{sample}/{sample}_vs_I-H-108298-N1-1-D1-1.annotated.flagged.output.tsv", sep='\t')
     df = df[df['AnnotSV type']=='full']
     #     df = df[df['brass_score']>=10]
     df = df[(df['cat1_filters']==0)]
