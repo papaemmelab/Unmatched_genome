@@ -1,0 +1,429 @@
+A) ELLI AML
+
+1) Script: samtools + bcftools
+_____________________
+
+open FILE,"</home/gutierj2/architecture/SNVs/AML/bcftools_region.input.list";		# SAMPLE \t BAM
+while(<FILE>){
+	chomp;
+	$line=$_;
+	@patient=split(/\t/,$line);
+
+	$sample=$patient[0];
+	$bam=$patient[1];
+
+	$outfile_temp="/home/gutierj2/architecture/SNVs/AML/". "$sample" . ".vcf.temp";
+	$outfile="/home/gutierj2/architecture/SNVs/AML/". "$sample" . ".vcf";
+	$outfile_comp="/home/gutierj2/architecture/SNVs/AML/". "$sample" . ".vcf.gz";
+
+	$sum=0;
+
+	open FILE_elli,"</home/gutierj2/architecture/SNVs/hotspots_myeloid_Ellis_list_noResult_noHeader.bed";
+	while(<FILE_elli>){
+		chomp;
+		$line2=$_;
+		@coor=split(/\t/,$line2);
+		$region="$coor[0]".":"."$coor[2]"."-"."$coor[2]";
+
+		qx{samtools mpileup -C 50 -f /work/isabl/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta -r $region -q 20 -Q 20 -u -t DP,DP4,SP $bam | bcftools call -cv > $outfile_temp};
+
+		if($sum==0){
+			qx{cp $outfile_temp $outfile};
+			$sum++;
+		}
+		else{
+			qx{grep -v '#' $outfile_temp >> $outfile};
+		}
+
+	}
+	close FILE_elli;
+
+	qx{bgzip -c $outfile > $outfile_comp};
+	qx{rm $outfile_temp $outfile};
+}
+close FILE;
+
+
+
+
+1.1) Run in the cluster
+_____________________
+
+#Run script with bsub
+
+bsub \
+ -e /home/gutierj2/architecture/SNVs/oncoKB/I-H-136050-T1-1-D1-1_mpileup.err \
+ -J mpileup \
+ -M 2 \
+ -n 4 \
+ -W 40000 \
+ perl bcftools_region.input.pl &
+
+
+
+
+2) ARGV[0]:
+_____________________
+
+I-H-135419-T1-2-D1-1	/work/isabl/data/analyses/34/06/163406/I-H-135419-T1-2-D1-1.bam
+I-H-135419-T2-1-D1-1	/work/isabl/data/analyses/87/43/228743/I-H-135419-T2-1-D1-1.bam
+I-H-136049-T1-1-D1-1	/work/isabl/data/analyses/85/65/228565/I-H-136049-T1-1-D1-1.bam
+I-H-136050-T1-1-D1-1	/work/isabl/data/analyses/87/44/228744/I-H-136050-T1-1-D1-1.bam
+I-H-136054-T1-1-D1-1	/work/isabl/data/analyses/87/48/228748/I-H-136054-T1-1-D1-1.bam
+I-H-136057-T1-1-D1-1	/work/isabl/data/analyses/87/51/228751/I-H-136057-T1-1-D1-1.bam
+I-H-136059-T1-1-D1-1	/work/isabl/data/analyses/87/53/228753/I-H-136059-T1-1-D1-1.bam
+
+
+
+3) Test:
+_____________________
+
+$outfile_temp="/home/gutierj2/architecture/SNVs/AML/". "I-H-135419-T1-2-D1-1" . ".vcf.gz.temp.test";
+$outfile="/home/gutierj2/architecture/SNVs/AML/". "I-H-135419-T1-2-D1-1" . ".vcf.gz.test";
+$region="2:209113113-209113113";
+$bam="/work/isabl/data/analyses/34/06/163406/I-H-135419-T1-2-D1-1.bam";
+qx{samtools mpileup -C 50 -f /work/isabl/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta -r $region -q 20 -Q 20 -u -t DP,DP4,SP $bam | bcftools call -cv > $outfile};
+qx{bgzip -c $outfile};
+#qx{rm $outfile_temp};
+
+
+
+
+4) Annotation
+_____________________
+
+
+click_annotvcf annotvcf \
+    --input_vcf /work/isabl/home/gutierj2/click_annotvcf/AML/I-H-136059-T1-1-D1-1.vcf.gz \
+    --outdir . \
+    --output_prefix I-H-136059-T1-1-D1-1 \
+    --assembly GRCH37D5 \
+    --reference /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+    --vagrent /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vagrent/Homo_sapiens_KnC.GRCh37.75.vagrent.cache.gz \
+    --vep-dir /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vep/cache/ \
+    --ensembl-version 91 \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_genomes/gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_genome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_exomes/gnomad.exomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_exome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81/CosmicMergedVariants.vcf.gz COSMIC GENE,STRAND,CDS,AA,CNT,SNP \
+    --cosmic /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81
+
+
+
+
+B) oncoKB
+
+5) Generation bed file with the oncoKB positions
+_____________________
+
+
+$print="/home/gutierj2/architecture/SNVs/oncoKB/oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm.bed";
+open FILE_print,">$print";
+open FILE,"</home/gutierj2/architecture/SNVs/oncoKB/oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm_2bed.txt";
+while(<FILE>){
+	chomp;
+	$line=$_;
+	@tabs=split(/\t/,$line);
+
+	if ($tabs[13]=~/c/){
+		@splicing_don=split(/c|\(|\,|\s|\)/,$tabs[13]);
+		@splicing_acept=split(/c|\(|\,|\s|\)/,$tabs[14]);
+
+		print FILE_print ($tabs[12],"\t",$splicing_don[2],"\t",$splicing_acept[2],"\n");
+		print FILE_print ($tabs[12],"\t",$splicing_don[4],"\t",$splicing_acept[4],"\n");
+
+	}
+	else{
+		print FILE_print ($tabs[12],"\t",$tabs[13],"\t",$tabs[14],"\n");
+	}
+}
+close FILE;
+close FILE_print;
+
+
+[cat -n oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm.bed | sort -uk2 | sort -nk1 | cut -f2- > oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm.unique.bed]
+
+
+
+
+6) Generation mpileup, one per patient
+_____________________
+
+
+open FILE,"<$ARGV[0]";		# SAMPLE \t BAM (ex. /home/gutierj2/architecture/SNVs/oncoKB/patients/I-H-136060-T1-1-D1-1_bcftools.list)
+while(<FILE>){
+	chomp;
+	$line=$_;
+	@patient=split(/\t/,$line);
+
+	$sample=$patient[0];
+	$bam=$patient[1];
+
+	$outfile_temp="/home/gutierj2/architecture/SNVs/oncoKB/patients/". "$sample" . ".vcf.temp";
+	$outfile="/home/gutierj2/architecture/SNVs/oncoKB/patients/". "$sample" . ".vcf";
+	$outfile_comp="/home/gutierj2/architecture/SNVs/oncoKB/patients/". "$sample" . ".vcf.gz";
+
+	$sum=0;
+
+	open FILE_onco,"</home/gutierj2/architecture/SNVs/oncoKB/oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm.unique.bed";
+	while(<FILE_onco>){
+		chomp;
+		$line2=$_;
+		@coor=split(/\t/,$line2);
+		$region="$coor[0]".":"."$coor[1]"."-"."$coor[2]";
+
+		qx{samtools mpileup -C 50 -f /work/isabl/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta -r $region -q 20 -Q 20 -u -t DP,DP4,SP $bam | bcftools call -cv > $outfile_temp};
+
+		if($sum==0){
+			qx{cp $outfile_temp $outfile};
+			$sum++;
+		}
+		else{
+			qx{grep -v '#' $outfile_temp >> $outfile};
+		}
+
+	}
+	close FILE_onco;
+
+	qx{bgzip -c $outfile > $outfile_comp};
+	qx{rm $outfile_temp $outfile};
+}
+close FILE;
+
+
+
+
+#Run script with bsub
+
+bsub \
+ -e /home/gutierj2/architecture/SNVs/oncoKB/patients/I-H-136060-T1-1-D1-1_mpileup.err \
+ -J mpileup \
+ -M 2 \
+ -n 4 \
+ -W 40000 \
+ perl bcftools_region_patients.pl I-H-136060-T1-1-D1-1_bcftools.list &
+
+
+
+7) Annotation
+_____________________
+
+
+click_annotvcf annotvcf \
+    --input_vcf /work/isabl/home/gutierj2/click_annotvcf/oncoKB/I-H-136060-T1-1-D1-1.vcf.gz \
+    --outdir . \
+    --output_prefix I-H-136060-T1-1-D1-1 \
+    --assembly GRCH37D5 \
+    --reference /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+    --vagrent /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vagrent/Homo_sapiens_KnC.GRCh37.75.vagrent.cache.gz \
+    --vep-dir /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vep/cache/ \
+    --ensembl-version 91 \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_genomes/gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_genome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_exomes/gnomad.exomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_exome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81/CosmicMergedVariants.vcf.gz COSMIC GENE,STRAND,CDS,AA,CNT,SNP \
+    --cosmic /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81 &
+
+
+[less /work/isabl/home/gutierj2/click_annotvcf/oncoKB/I-H-136060-T1-1-D1-1.output.annot.tsv.gz | grep -v '#' > I-H-136060-T1-1-D1-1.output.annot.tsv]
+
+
+
+8) Filtering Annotation
+_____________________
+
+H) oncoKB
+
+oncokb_ann=pd.read_csv('/work/isabl/home/gutierj2/click_annotvcf/oncoKB/I-H-136050-T1-1-D1-1.output.annot.tsv',sep='\t')
+oncokb_ann=oncokb_ann[['CHR','START','REF','ALT','QUAL','VAG_GENE','VAG_cDNA_CHANGE','VAG_PROTEIN_CHANGE','VEP_Consequence','VEP_IMPACT']]
+oncokb_ann=oncokb_ann.drop_duplicates(subset=None, keep='first', inplace=False)
+oncokb_ann['VAG_PROTEIN_CHANGE']=oncokb_ann['VAG_PROTEIN_CHANGE'].str.replace('p.', '', regex=False)
+oncokb=pd.read_csv('/home/gutierj2/architecture/SNVs/oncoKB/oncoKB_allAnnotatedVariants_Aug_2018_aaPos_aaGnm_2bed.txt',sep='\t')
+oncokb_info=pd.DataFrame(columns=['Index','Isoform','RefSeq','Entrez.Gene.ID','Gene','Alteration','Protein.Change','Oncogenicity','Mutation.Effect','PMIDs.for.Mutation.Effect','aaPos','chr_gnm','start_gnm','end_gnm'])
+for index,row in oncokb_ann.iterrows():
+    for index2,row2 in oncokb.iterrows():
+        if ( (str(row['VAG_GENE'])==str(row2['Gene'])) & (str(row['VAG_PROTEIN_CHANGE'])==str(row2['Alteration'])) ):
+            #print(row2)
+            oncokb_info=oncokb_info.append(row2)
+oncokb_info.sort_values(by=['Oncogenicity'])
+
+
+
+
+
+
+
+9) Mutect TSGs: JGA version
+_____________________
+
+bsub \
+ -e /work/isabl/home/gutierj2/tsg_unmatched/I-H-132889-T2-1-D1-1_mutect2.err \
+ -J mutect \
+ -M 2 \
+ -n 4 \
+ -W 40000 \
+ /work/isabl/home/gutierj2/software/gatk-4.1.3.0/gatk Mutect2 \
+  -R /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+  -L /work/isabl/home/gutierj2/tsg_unmatched/tsg_coordinates.bed \
+	  -I /work/isabl/data/analyses/27/88/252788/I-H-132889-T2-1-D1-1.bam \
+	  -O /work/isabl/home/gutierj2/tsg_unmatched/I-H-132889-T2-1-D1-1.vcf.gz &
+
+[Problem]
+Batch system concurrent query limit exceeded ... retrying in 1 second(s).
+
+
+
+
+[isabl]
+isabl apps-grch37 mutect-4.0.1.2 -p I-H-132889-T2-1-D1-1 I-H-133671-N1-1-D1-1 --commit
+
+
+
+10) Container version
+_____________________
+
+
+
+bsub \
+  -e /work/isabl/home/gutierj2/tsg_unmatched/I-H-136060-T1-1-D1-1_singularity_mutect.err \
+  -o /work/isabl/home/gutierj2/tsg_unmatched/I-H-136060-T1-1-D1-1_singularity_mutect.out \
+  -J singularity_mutect \
+  -M 2 \
+  -W 40000 \
+  /opt/common/CentOS_6-dev/singularity/singularity-2.4.2/bin/singularity exec \
+    --scratch /ifs/work/leukgen/temp \
+    --home /ifs/res/leukgen/home/gutierj2 \
+    --workdir /ifs/work/leukgen/temp \
+    --bind /ifs:/ifs,/work:/work \
+    /juno/work/isabl/local/toil_mutect/v1.2.7/toil_mutect-v1.2.7.simg \
+      /work/isabl/home/gutierj2/software/gatk-4.1.3.0/gatk Mutect2 \
+      -R /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+      -L /work/isabl/home/gutierj2/tsg_unmatched/tsg_coordinates.bed \
+      -I /work/isabl/data/analyses/75/88/227588/I-H-136060-T1-1-D1-1.bam \
+      -O /work/isabl/home/gutierj2/tsg_unmatched/I-H-136060-T1-1-D1-1.vcf.gz &
+
+
+
+11) Annotation Juanes:
+_____________________
+
+
+bcftools norm \
+   --no-version \
+   -m - \
+   --fasta-ref /work/isabl/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+   --output I-H-136060-T1-1-D1-1.norm.vcf \
+   I-H-136060-T1-1-D1-1.vcf.gz &
+
+bgzip -c I-H-136060-T1-1-D1-1.norm.vcf > I-H-136060-T1-1-D1-1.norm.vcf.gz
+
+
+bsub \
+ -e /work/isabl/home/gutierj2/tsg_unmatched/I-H-136060-T1-1-D1-1_annotvcf.err \
+ -J annotvcf \
+ -M 2 \
+ -n 4 \
+ -W 40000 \
+click_annotvcf annotvcf \
+    --input_vcf /work/isabl/home/gutierj2/tsg_unmatched/I-H-136060-T1-1-D1-1.norm.vcf.gz \
+    --outdir . \
+    --output_prefix I-H-136060-T1-1-D1-1.norm \
+    --assembly GRCH37D5 \
+    --reference /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta \
+    --vagrent /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vagrent/Homo_sapiens_KnC.GRCh37.75.vagrent.cache.gz \
+    --vep-dir /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/vep/cache/ \
+    --ensembl-version 91 \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_genomes/gnomad.genomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_genome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/home/leukbot/tests/vep/gnomad_exomes/gnomad.exomes.r2.0.1.sites.noVEP.vcf.gz gnomAD_exome AC_AFR,AC_AMR,AC_ASJ,AC_EAS,AC_FIN,AC_NFE,AC_OTH,AC_Male,AC_Female,AN_AFR,AN_AMR,AN_ASJ,AN_EAS,AN_FIN,AN_NFE,AN_OTH,AN_Male,AN_Female,AF_AFR,AF_AMR,AF_ASJ,AF_EAS,AF_FIN,AF_NFE,AF_OTH,AF_Male,AF_Female,Hom_HomR,Hom_AMR,Hom_ASJ,Hom_EAS,Hom_FIN,Hom_NFE,Hom_OTH,Hom_Male,Hom_Female \
+    --custom /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81/CosmicMergedVariants.vcf.gz COSMIC GENE,STRAND,CDS,AA,CNT,SNP \
+    --cosmic /ifs/work/leukgen/ref/homo_sapiens/GRCh37d5/cosmic/81 &
+
+
+
+12) Filtering annotations: look for nonsense muts
+_____________________
+ 
+A) 1st Option
+
+less I-H-132889-T2-1-D1-1.annot-vagrent.annot-vep.vcf.gz|grep non_synonymous_codon | grep -v '#' > I-H-132889-T2-1-D1-1.nonsyn.list
+
+open FILE,"<$ARGV[0]";
+while(<FILE>){
+	chomp;
+	$line=$_;
+	@tab=split(/\t/,$line);
+	@mut=split(/\|/,$tab[43]);
+
+	if ($mut[4]=~/\*/){
+		print "$line\n";
+	}
+}
+close FILE;
+
+
+
+
+B) 2nd Option
+
+less I-H-136060-T1-1-D1-1.norm.output.annot.tsv.gz | grep 'codon_variant:stop_gained' > I-H-136060-T1-1-D1-1.norm.output.annot.stop.tsv.gz
+
+
+To add: Col $97=VEP_gnomAD_genome
+less I-H-136060-T1-1-D1-1.norm.output.annot.tsv.gz | grep 'codon_variant:stop_gained'| awk '{if ($97!~/rs/) print $0}' > I-H-136060-T1-1-D1-1.norm.output.annot.stop.tsv.gz
+
+
+
+13) Generation mpileup, one per patient
+_____________________
+
+
+open FILE,"<$ARGV[0]";		# SAMPLE \t BAM (ex. /home/gutierj2/architecture/SNVs/oncoKB/patients/I-H-136060-T1-1-D1-1_bcftools.list)
+while(<FILE>){
+	chomp;
+	$line=$_;
+	@patient=split(/\t/,$line);
+
+	$sample=$patient[0];
+	$bam=$patient[1];
+
+	$outfile_temp="/work/isabl/home/gutierj2/tsg_unmatched/". "$sample" . ".stop.vcf.temp";
+	$outfile="/work/isabl/home/gutierj2/tsg_unmatched/". "$sample" . ".stop.vcf";
+	$outfile_comp="/work/isabl/home/gutierj2/tsg_unmatched/". "$sample" . ".stop.vcf.gz";
+
+	$sum=0;
+
+	open FILE_onco,"<$ARGV[1]";		# ex. I-H-136060-T1-1-D1-1.norm.output.annot.stop.tsv.gz
+	while(<FILE_onco>){
+		chomp;
+		$line2=$_;
+		@coor=split(/\t/,$line2);
+		$region="$coor[3]".":"."$coor[4]"."-"."$coor[4]";
+
+		qx{samtools mpileup -C 50 -f /work/isabl/ref/homo_sapiens/GRCh37d5/genome/gr37.fasta -r $region -q 20 -Q 20 -u -t DP,DP4,SP $bam | bcftools call -cv > $outfile_temp};
+
+		if($sum==0){
+			qx{cp $outfile_temp $outfile};
+			$sum++;
+		}
+		else{
+			qx{grep -v '#' $outfile_temp >> $outfile};
+		}
+
+	}
+	close FILE_onco;
+
+	qx{bgzip -c $outfile > $outfile_comp};
+	qx{rm $outfile_temp $outfile};
+}
+close FILE;
+
+
+
+14) TSV for jupyter
+_____________________
+
+less I-H-136050-T1-1-D1-1.norm.output.annot.tsv.gz|grep CHR > I-H-136060-T1-1-D1-1.norm.output.annot.stop.bcftools.tsv.gz
+less I-H-136060-T1-1-D1-1.norm.output.annot.tsv.gz|grep 21971120 >> I-H-136060-T1-1-D1-1.norm.output.annot.stop.bcftools.tsv.gz
+less I-H-136060-T1-1-D1-1.norm.output.annot.tsv.gz|grep 22006159 >> I-H-136060-T1-1-D1-1.norm.output.annot.stop.bcftools.tsv.gz
+
+
+
+âˆ
